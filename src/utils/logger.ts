@@ -1,0 +1,13 @@
+const isDev = import.meta.env.MODE === 'development';
+
+export const logger = {
+  info: (...args: any[]) => {
+    if (isDev) console.info('[INFO]', ...args);
+  },
+  warn: (...args: any[]) => {
+    if (isDev) console.warn('[WARN]', ...args);
+  },
+  error: (...args: any[]) => {
+    console.error('[ERROR]', ...args);
+  },
+};

@@ -1,0 +1,132 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function hasRole(roles) {
+      return isAuthenticated() && getUserData().role in roles;
+    }
+
+    function isSameTenant(orgId) {
+      return isAuthenticated() && getUserData().organizationId == orgId;
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (request.auth.uid == userId || hasRole(['OWNER', 'ADMIN', 'MANAGER']));
+      allow update: if isAuthenticated() && (request.auth.uid == userId || hasRole(['OWNER', 'ADMIN', 'MANAGER']));
+      allow delete: if isAuthenticated() && hasRole(['OWNER', 'ADMIN']);
+    }
+
+    match /teachers/{teacherId} {
+      allow read: if isAuthenticated() && isSameTenant(resource.data.organizationId);
+      allow create: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER']) && isSameTenant(request.resource.data.organizationId);
+      allow update: if isAuthenticated() && (hasRole(['OWNER', 'ADMIN', 'MANAGER']) || request.auth.uid == resource.data.teacherId) && isSameTenant(resource.data.organizationId);
+      allow delete: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER']) && isSameTenant(resource.data.organizationId);
+    }
+
+    match /classrooms/{classroomId} {
+      allow read: if isAuthenticated() && isSameTenant(resource.data.organizationId);
+      allow create: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER']) && isSameTenant(request.resource.data.organizationId);
+      allow update: if isAuthenticated() && (hasRole(['OWNER', 'ADMIN', 'MANAGER']) || request.auth.uid == resource.data.teacherId) && isSameTenant(resource.data.organizationId);
+      allow delete: if isAuthenticated() && hasRole(['OWNER', 'ADMIN']) && isSameTenant(resource.data.organizationId);
+    }
+
+    match /students/{studentId} {
+      allow read: if isAuthenticated() && isSameTenant(resource.data.organizationId);
+      allow create: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER', 'TEACHER']) && isSameTenant(request.resource.data.organizationId);
+      allow update: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER', 'TEACHER']) && isSameTenant(resource.data.organizationId);
+      allow delete: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER']) && isSameTenant(resource.data.organizationId);
+    }
+
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated() && isSameTenant(resource.data.organizationId);
+      allow write: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER', 'TEACHER', 'ASSISTANT']); // Assume app validates orgId
+    }
+
+    match /attendanceLogs/{logId} {
+      allow read: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER']);
+      allow write: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER', 'TEACHER', 'ASSISTANT']);
+    }
+
+    match /parents/{parentId} {
+      allow read: if isAuthenticated() && isSameTenant(resource.data.organizationId);
+      allow create: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER']) && isSameTenant(request.resource.data.organizationId);
+      allow update: if isAuthenticated() && (hasRole(['OWNER', 'ADMIN', 'MANAGER']) || request.auth.uid == resource.data.userId) && isSameTenant(resource.data.organizationId);
+      allow delete: if isAuthenticated() && hasRole(['OWNER', 'ADMIN']) && isSameTenant(resource.data.organizationId);
+    }
+
+    match /studentParents/{spId} {
+      allow read: if isAuthenticated() && isSameTenant(resource.data.organizationId);
+      allow write: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER']) && isSameTenant(request.resource.data.organizationId);
+    }
+
+    match /leaveRequests/{requestId} {
+      allow read: if isAuthenticated() && isSameTenant(resource.data.organizationId);
+      allow create: if isAuthenticated() && hasRole(['PARENT', 'OWNER', 'ADMIN', 'MANAGER', 'TEACHER']) && isSameTenant(request.resource.data.organizationId);
+      allow update: if isAuthenticated() && hasRole(['PARENT', 'OWNER', 'ADMIN', 'MANAGER', 'TEACHER']) && isSameTenant(resource.data.organizationId);
+      allow delete: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER']) && isSameTenant(resource.data.organizationId);
+    }
+
+    match /parentNotifications/{notificationId} {
+      allow read: if isAuthenticated() && isSameTenant(resource.data.organizationId);
+      allow create: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER', 'TEACHER']) && isSameTenant(request.resource.data.organizationId);
+      allow update: if isAuthenticated() && (hasRole(['OWNER', 'ADMIN', 'MANAGER', 'TEACHER']) || request.auth.uid == resource.data.parentId) && isSameTenant(resource.data.organizationId);
+      allow delete: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER']) && isSameTenant(resource.data.organizationId);
+    }
+
+    match /tuitionPlans/{planId} {
+      allow read: if isAuthenticated() && isSameTenant(resource.data.organizationId);
+      allow write: if isAuthenticated() && hasRole(['OWNER', 'ADMIN', 'MANAGER']);
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && hasRole(['super_admin', 'admin', 'teacher']);
+      allow write: if isAuthenticated() && hasRole(['super_admin', 'admin']);
+    }
+
+    match /monthlyReports/{reportId} {
+      allow read: if isAuthenticated() && hasRole(['super_admin', 'admin', 'teacher']);
+      allow write: if isAuthenticated() && hasRole(['super_admin', 'admin']);
+    }
+
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && hasRole(['super_admin', 'admin']);
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && hasRole(['super_admin', 'admin']);
+    }
+
+    match /logs/{logId} {
+      allow read: if isAuthenticated() && hasRole(['super_admin', 'admin']);
+      allow write: if isAuthenticated();
+    }
+
+    match /faceEmbeddings/{embeddingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && hasRole(['super_admin', 'admin', 'teacher']);
+    }
+
+    match /school/{schoolId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && hasRole(['super_admin', 'admin']);
+    }
+
+    match /backupHistory/{backupId} {
+      allow read: if isAuthenticated() && hasRole(['super_admin', 'admin']);
+      allow write: if isAuthenticated() && hasRole(['super_admin', 'admin']);
+    }
+  }
+}

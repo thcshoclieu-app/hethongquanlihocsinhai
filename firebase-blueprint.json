@@ -1,0 +1,132 @@
+{
+  "collections": [
+    {
+      "name": "users",
+      "description": "User accounts with their roles.",
+      "securityRules": {
+        "read": "request.auth != null",
+        "create": "request.auth != null && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin'])",
+        "update": "request.auth != null && (request.auth.uid == resource.id || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin'])",
+        "delete": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin'"
+      }
+    },
+    {
+      "name": "teachers",
+      "description": "Teacher profiles.",
+      "securityRules": {
+        "read": "request.auth != null",
+        "create": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']",
+        "update": "request.auth != null && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin'] || request.auth.uid == resource.data.teacherId)",
+        "delete": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']"
+      }
+    },
+    {
+      "name": "classrooms",
+      "description": "Classroom information.",
+      "securityRules": {
+        "read": "request.auth != null",
+        "create": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']",
+        "update": "request.auth != null && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin'] || request.auth.uid == resource.data.teacherId)",
+        "delete": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']"
+      }
+    },
+    {
+      "name": "students",
+      "description": "Student information.",
+      "securityRules": {
+        "read": "request.auth != null",
+        "create": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin', 'teacher']",
+        "update": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin', 'teacher']",
+        "delete": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']"
+      }
+    },
+    {
+      "name": "attendance",
+      "description": "Attendance records.",
+      "securityRules": {
+        "read": "request.auth != null",
+        "write": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin', 'teacher', 'assistant']"
+      }
+    },
+    {
+      "name": "attendanceLogs",
+      "description": "Attendance action logs.",
+      "securityRules": {
+        "read": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']",
+        "write": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin', 'teacher', 'assistant']"
+      }
+    },
+    {
+      "name": "tuitionPlans",
+      "description": "Tuition plans setup.",
+      "securityRules": {
+        "read": "request.auth != null",
+        "write": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']"
+      }
+    },
+    {
+      "name": "payments",
+      "description": "Payment records.",
+      "securityRules": {
+        "read": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin', 'teacher']",
+        "write": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']"
+      }
+    },
+    {
+      "name": "monthlyReports",
+      "description": "Monthly report files.",
+      "securityRules": {
+        "read": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin', 'teacher']",
+        "write": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']"
+      }
+    },
+    {
+      "name": "settings",
+      "description": "System settings.",
+      "securityRules": {
+        "read": "request.auth != null",
+        "write": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']"
+      }
+    },
+    {
+      "name": "notifications",
+      "description": "System notifications.",
+      "securityRules": {
+        "read": "request.auth != null",
+        "write": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']"
+      }
+    },
+    {
+      "name": "logs",
+      "description": "System action logs.",
+      "securityRules": {
+        "read": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']",
+        "write": "request.auth != null"
+      }
+    },
+    {
+      "name": "faceEmbeddings",
+      "description": "Face embeddings for students.",
+      "securityRules": {
+        "read": "request.auth != null",
+        "write": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin', 'teacher']"
+      }
+    },
+    {
+      "name": "school",
+      "description": "School information.",
+      "securityRules": {
+        "read": "request.auth != null",
+        "write": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']"
+      }
+    },
+    {
+      "name": "backupHistory",
+      "description": "Database backup history.",
+      "securityRules": {
+        "read": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']",
+        "write": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'admin']"
+      }
+    }
+  ]
+}
